@@ -1,6 +1,8 @@
 package com.example.passpoint
 
 import android.os.Bundle
+import android.util.Patterns
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -20,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,22 +30,24 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.passpoint.ui.components.TextFieldWithLabel
+import com.example.passpoint.components.TextFieldWithLabel
+import com.example.passpoint.services.AuthManager
 import com.example.passpoint.ui.theme.PassPointTheme
 
 class RegistrationActivity : ComponentActivity() {
+    private val authManager = AuthManager()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             PassPointTheme {
-                // Setup the navigation
                 val navController = rememberNavController()
 
                 // State for storing input values
-                val nameState = remember { mutableStateOf("") }
                 val emailState = remember { mutableStateOf("") }
                 val passwordState = remember { mutableStateOf("") }
+                val repeatPasswordState = remember { mutableStateOf("") }
 
                 // Navigation host, setting up the graph
                 NavHost(
@@ -52,17 +57,18 @@ class RegistrationActivity : ComponentActivity() {
                     composable("registration_form_screen") {
                         RegistrationFormScreen(
                             navController = navController,
-                            nameState = nameState,
                             emailState = emailState,
-                            passwordState = passwordState
+                            passwordState = passwordState,
+                            repeatPasswordState = repeatPasswordState,
+                            authManager = authManager // Passing it to the screen
                         )
                     }
                     composable("additional_information_screen") {
                         AdditionalInformations(
                             navController = navController,
-                            name = nameState.value,
                             email = emailState.value,
-                            password = passwordState.value
+                            password = passwordState.value,
+                            repeatPassword = repeatPasswordState.value
                         )
                     }
                 }
@@ -74,10 +80,53 @@ class RegistrationActivity : ComponentActivity() {
 @Composable
 fun RegistrationFormScreen(
     navController: NavController,
-    nameState: MutableState<String>,
     emailState: MutableState<String>,
-    passwordState: MutableState<String>
+    passwordState: MutableState<String>,
+    repeatPasswordState: MutableState<String>,
+    authManager: AuthManager // Accept the authManager as a parameter
 ) {
+    // Funkcia na overenie sily hesla
+    fun isPasswordStrong(password: String): Boolean {
+        val passwordRegex =
+            "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}\$".toRegex()
+        return password.matches(passwordRegex)
+    }
+
+    fun validateRegistrationForm(
+        email: String,
+        password: String,
+        repeatPassword: String,
+        onValidationComplete: (Boolean, String?) -> Unit
+    ) {
+        // 1. Overenie formátu e-mailu
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            onValidationComplete(false, "Neplatný formát e-mailu")
+            return
+        }
+
+        // 2. Overenie, či sa heslá zhodujú
+        if (password != repeatPassword) {
+            onValidationComplete(false, "Heslá sa nezhodujú")
+            return
+        }
+
+        // 4. Overenie, či e-mail už existuje
+        authManager.checkIfEmailExists(email) { exists ->
+            if (exists) {
+                onValidationComplete(false, "Tento e-mail už existuje.")
+            } else {
+                // Ak všetky kontroly prejdú, validácia je úspešná
+                onValidationComplete(true, null)
+            }
+        }
+
+        // Ak všetky kontroly prejdú, validácia je úspešná
+        onValidationComplete(true, null)
+    }
+
+    // Get the context to show the Toast
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -97,16 +146,32 @@ fun RegistrationFormScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Form Fields
-        TextFieldWithLabel(label = "Name", textState = nameState)
+        TextFieldWithLabel(label = "Email", textState = emailState, optional = false)
         Spacer(modifier = Modifier.height(8.dp))
-        TextFieldWithLabel(label = "Email", textState = emailState)
+        TextFieldWithLabel(label = "Password", textState = passwordState, optional = false)
         Spacer(modifier = Modifier.height(8.dp))
-        TextFieldWithLabel(label = "Password", textState = passwordState)
+        TextFieldWithLabel(
+            label = "Repeat Password",
+            textState = repeatPasswordState,
+            optional = false
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            // Navigate to additional information screen, passing the values
-            navController.navigate("additional_information_screen")
+            // Validate the form
+            validateRegistrationForm(
+                emailState.value,
+                passwordState.value,
+                repeatPasswordState.value
+            ) { isValid, message ->
+                if (isValid) {
+                    // If the form is valid, navigate to the next screen
+                    navController.navigate("additional_information_screen")
+                } else {
+                    // If the form is invalid, show the error message
+                    Toast.makeText(context, message ?: "Unknown error", Toast.LENGTH_SHORT).show()
+                }
+            }
         }) {
             Text(text = "Continue")
         }
@@ -116,9 +181,9 @@ fun RegistrationFormScreen(
 @Composable
 fun AdditionalInformations(
     navController: NavController,
-    name: String,
     email: String,
-    password: String
+    password: String,
+    repeatPassword: String
 ) {
     // Layout for the "Continue" screen
     Column(
@@ -128,9 +193,9 @@ fun AdditionalInformations(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Name: $name")
-        Text(text = "Email: $email")
-        Text(text = "Password: $password")
+        Text(text = "Name: $email")
+        Text(text = "Email: $password")
+        Text(text = "Password: $repeatPassword")
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -143,19 +208,28 @@ fun AdditionalInformations(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun RegistrationFormScreenPreview() {
-    PassPointTheme {
-        // Call RegistrationFormScreen without NavController for the preview
-        RegistrationFormScreen(
-            navController = rememberNavController(),
-            nameState = remember { mutableStateOf("") },
-            emailState = remember { mutableStateOf("") },
-            passwordState = remember { mutableStateOf("") }
-        )
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun RegistrationFormScreenPreview() {
+//    PassPointTheme {
+//        // Create a mock AuthManager
+//        val mockAuthManager = object : AuthManager() {
+//            override fun checkIfEmailExists(email: String, onResult: (Boolean) -> Unit) {
+//                // Mock response: Assume no email exists
+//                onResult(false)
+//            }
+//        }
+//
+//        // Call RegistrationFormScreen with a mock AuthManager
+//        RegistrationFormScreen(
+//            navController = rememberNavController(),
+//            emailState = remember { mutableStateOf("") },
+//            passwordState = remember { mutableStateOf("") },
+//            repeatPasswordState = remember { mutableStateOf("") },
+//            authManager = mockAuthManager // Passing mock AuthManager here
+//        )
+//    }
+//}
 
 @Preview(showBackground = true)
 @Composable
@@ -164,9 +238,9 @@ fun AdditionalInformationScreenPreview() {
         // Preview for the additional information screen
         AdditionalInformations(
             navController = rememberNavController(),
-            name = "John Doe",
-            email = "johndoe@example.com",
-            password = "password123"
+            email = "John Doe",
+            password = "johndoe@example.com",
+            repeatPassword = "password123"
         )
     }
 }

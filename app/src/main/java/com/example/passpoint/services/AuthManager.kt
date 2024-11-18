@@ -42,4 +42,25 @@ class AuthManager {
     fun getCurrentUser(): FirebaseUser? {
         return auth.currentUser
     }
+
+    // Check if email already exists in Firebase Authentication
+    fun checkIfEmailExists(email: String, onResult: (Boolean) -> Unit) {
+        auth.fetchSignInMethodsForEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // Skontrolujeme, či existuje priradený sign-in method
+                    val signInMethods = task.result?.signInMethods
+                    if (!signInMethods.isNullOrEmpty()) {
+                        // Email už existuje
+                        onResult(true)
+                    } else {
+                        // Email neexistuje
+                        onResult(false)
+                    }
+                } else {
+                    // Ak sa vyskytla chyba pri overovaní emailu
+                    onResult(false)
+                }
+            }
+    }
 }

@@ -29,7 +29,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.passpoint.ui.components.TextFieldWithLabel
+import com.example.passpoint.components.TextFieldWithLabel
 import com.example.passpoint.ui.theme.PassPointTheme
 
 class LoginActivity : ComponentActivity() {
@@ -77,9 +77,9 @@ fun LoginScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Add input fields and pass state to TextFieldWithLabel
-        TextFieldWithLabel(label = "Email", textState = emailState)
+        TextFieldWithLabel(label = "Email", textState = emailState, optional = false)
         Spacer(modifier = Modifier.height(8.dp))
-        TextFieldWithLabel(label = "Password", textState = passwordState)
+        TextFieldWithLabel(label = "Password", textState = passwordState, optional = false)
         Spacer(modifier = Modifier.height(16.dp))
 
         // Clickable text to navigate to RegistrationActivity
