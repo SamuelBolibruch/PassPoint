@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "493919341367",
+    "project_id": "passpoint-2024",
+    "storage_bucket": "passpoint-2024.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:493919341367:android:0f0bccb05ab7ab8e2a68b2",
+        "android_client_info": {
+          "package_name": "com.example.passpoint"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEgEzGZUXg9TyvDYDqBRFCP2EMB-uAsVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

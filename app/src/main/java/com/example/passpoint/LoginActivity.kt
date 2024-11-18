@@ -12,6 +12,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,7 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.passpoint.components.TextFieldWithLabel
+import com.example.passpoint.ui.components.TextFieldWithLabel
 import com.example.passpoint.ui.theme.PassPointTheme
 
 class LoginActivity : ComponentActivity() {
@@ -45,6 +47,10 @@ fun LoginScreen() {
     // Get the current context (this is the activity context)
     val context = LocalContext.current
 
+    // State for storing input values
+    val emailState = remember { mutableStateOf("") }
+    val passwordState = remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -54,7 +60,7 @@ fun LoginScreen() {
     ) {
         // Add the image above the input fields
         Image(
-            painter = painterResource(id = com.example.passpoint.R.drawable.passpoint),
+            painter = painterResource(id = R.drawable.passpoint),
             contentDescription = "Passpoint Logo",
             modifier = Modifier
                 .fillMaxWidth()
@@ -64,13 +70,13 @@ fun LoginScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Add input fields
-        TextFieldWithLabel(label = "Email")
+        // Add input fields and pass state to TextFieldWithLabel
+        TextFieldWithLabel(label = "Email", textState = emailState)
         Spacer(modifier = Modifier.height(8.dp))
-        TextFieldWithLabel(label = "Password")
+        TextFieldWithLabel(label = "Password", textState = passwordState)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Klikateľný text na navigáciu k RegistrationActivity
+        // Clickable text to navigate to RegistrationActivity
         Text(
             text = "Go to Registration",
             color = Color.Blue,
@@ -82,6 +88,14 @@ fun LoginScreen() {
 
         // Login Button that navigates to MainActivity
         Button(onClick = {
+            // Access the values of the fields
+            val email = emailState.value
+            val password = passwordState.value
+
+            // Handle the login logic, for now, just print the values
+            println("Email: $email, Password: $password")
+
+            // Example: Navigate to MainActivity after login
             val intent = Intent(context, MainActivity::class.java)
             context.startActivity(intent)
         }) {
