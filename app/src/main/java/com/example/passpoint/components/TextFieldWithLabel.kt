@@ -47,7 +47,7 @@ fun TextFieldWithLabel(label: String, textState: MutableState<String>, optional:
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp)) // Zaoblené rohy
                 .border(2.dp, Color.Gray, RoundedCornerShape(20.dp)) // Tmavo sivý border
-                .padding(12.dp)
+                .padding(16.dp)
                 .padding(start = 12.dp),
             singleLine = true
         )

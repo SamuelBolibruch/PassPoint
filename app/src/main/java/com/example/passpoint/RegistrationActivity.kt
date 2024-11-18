@@ -1,5 +1,6 @@
 package com.example.passpoint
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
 import android.widget.Toast
@@ -24,12 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.passpoint.components.DropdownWithLabel
 import com.example.passpoint.components.TextFieldWithLabel
 import com.example.passpoint.services.AuthManager
 import com.example.passpoint.ui.theme.PassPointTheme
@@ -59,16 +60,14 @@ class RegistrationActivity : ComponentActivity() {
                             navController = navController,
                             emailState = emailState,
                             passwordState = passwordState,
-                            repeatPasswordState = repeatPasswordState,
-                            authManager = authManager // Passing it to the screen
+                            repeatPasswordState = repeatPasswordState
                         )
                     }
                     composable("additional_information_screen") {
                         AdditionalInformations(
-                            navController = navController,
                             email = emailState.value,
                             password = passwordState.value,
-                            repeatPassword = repeatPasswordState.value
+                            authManager = authManager
                         )
                     }
                 }
@@ -83,12 +82,11 @@ fun RegistrationFormScreen(
     emailState: MutableState<String>,
     passwordState: MutableState<String>,
     repeatPasswordState: MutableState<String>,
-    authManager: AuthManager // Accept the authManager as a parameter
 ) {
     // Funkcia na overenie sily hesla
     fun isPasswordStrong(password: String): Boolean {
         val passwordRegex =
-            "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}\$".toRegex()
+            "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[\\W&&[^\\s]])[A-Za-z\\d\\W&&[^\\s]]{8,}\$".toRegex()
         return password.matches(passwordRegex)
     }
 
@@ -110,14 +108,10 @@ fun RegistrationFormScreen(
             return
         }
 
-        // 4. Overenie, či e-mail už existuje
-        authManager.checkIfEmailExists(email) { exists ->
-            if (exists) {
-                onValidationComplete(false, "Tento e-mail už existuje.")
-            } else {
-                // Ak všetky kontroly prejdú, validácia je úspešná
-                onValidationComplete(true, null)
-            }
+//         3. Overenie sily hesla
+        if (!isPasswordStrong(password)) {
+            onValidationComplete(false, "Heslo musí obsahovať aspoň jedno veľké písmeno, jedno malé písmeno, číslicu a špeciálny znak.")
+            return
         }
 
         // Ak všetky kontroly prejdú, validácia je úspešná
@@ -180,11 +174,16 @@ fun RegistrationFormScreen(
 
 @Composable
 fun AdditionalInformations(
-    navController: NavController,
     email: String,
     password: String,
-    repeatPassword: String
+    authManager: AuthManager // Accept the authManager as a parameter
 ) {
+    val context = LocalContext.current
+    val userNameState = remember { mutableStateOf("") }
+    val ageState = remember { mutableStateOf("0-18") }
+    val genderState = remember { mutableStateOf("Male") }
+    val handState = remember { mutableStateOf("Right-handed") }
+
     // Layout for the "Continue" screen
     Column(
         modifier = Modifier
@@ -193,15 +192,44 @@ fun AdditionalInformations(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Name: $email")
-        Text(text = "Email: $password")
-        Text(text = "Password: $repeatPassword")
+        TextFieldWithLabel(label = "Username", textState = userNameState, optional = true)
+
+        // Spacer for spacing
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Add the dropdown menu
+        DropdownWithLabel(
+            items = listOf("0-18", "18-25", "26-35", "36-45", "46-60", "60+"),
+            label = "Select your age:",
+            textState = ageState
+        )
+
+        DropdownWithLabel(
+            items = listOf("Male", "Female", "Other"),
+            label = "Select your gender:",
+            textState = genderState
+        )
+
+        DropdownWithLabel(
+            items = listOf("Right-handed", "Left-handed"),
+            label = "Select your preferred hand:",
+            textState = handState
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            // Perform some action (like submitting data)
-            println("User Registration Completed")
+            authManager.registerUser(email = email, password = password) { success, errorMessage ->
+                if (success) {
+                    // If registration is successful, navigate to MainActivity
+                    Toast.makeText(context, "Registration Successful", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(context, MainActivity::class.java)
+                    context.startActivity(intent)
+                } else {
+                    // Show error message in Toast
+                    Toast.makeText(context, "Registration Failed: ${errorMessage ?: "Unknown Error"}", Toast.LENGTH_LONG).show()
+                }
+            }
         }) {
             Text(text = "Complete Registration")
         }
@@ -231,16 +259,16 @@ fun AdditionalInformations(
 //    }
 //}
 
-@Preview(showBackground = true)
-@Composable
-fun AdditionalInformationScreenPreview() {
-    PassPointTheme {
-        // Preview for the additional information screen
-        AdditionalInformations(
-            navController = rememberNavController(),
-            email = "John Doe",
-            password = "johndoe@example.com",
-            repeatPassword = "password123"
-        )
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun AdditionalInformationScreenPreview() {
+//    PassPointTheme {
+//        // Preview for the additional information screen
+//        AdditionalInformations(
+//            navController = rememberNavController(),
+//            email = "John Doe",
+//            password = "johndoe@example.com",
+//            repeatPassword = "password123"
+//        )
+//    }
+//}
