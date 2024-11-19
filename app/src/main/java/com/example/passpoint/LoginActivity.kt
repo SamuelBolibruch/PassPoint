@@ -1,5 +1,6 @@
 package com.example.passpoint
 
+import PatternLockComponent
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -27,6 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.example.passpoint.components.TextFieldWithLabel
 import com.example.passpoint.services.AuthManager
 import com.example.passpoint.ui.theme.PassPointTheme
@@ -53,6 +57,7 @@ class LoginActivity : ComponentActivity() {
 fun LoginScreen(authManager: AuthManager) {
     // Get the current context (this is the activity context)
     val context = LocalContext.current
+    val openDialog = remember { mutableStateOf(false) } // Stav pre otvorenie dialógu
 
     // State for storing input values
     val emailState = remember { mutableStateOf("") }
@@ -81,9 +86,41 @@ fun LoginScreen(authManager: AuthManager) {
         TextFieldWithLabel(label = "Email", textState = emailState, optional = false)
         Spacer(modifier = Modifier.height(8.dp))
         TextFieldWithLabel(label = "Password", textState = passwordState, optional = false)
-        Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Image(
+            painter = painterResource(id = R.drawable.pattern_lock), // Váš obrázok pattern lock
+            contentDescription = "Pattern lock",
+            modifier = Modifier
+                .width(50.dp)
+                .height(50.dp)
+                .clickable {
+                    // Zobraziť dialóg pri kliknutí na obrázok
+                    openDialog.value = true
+                },
+            contentScale = ContentScale.Fit
+        )
+
+        if (openDialog.value) {
+            Dialog(
+                onDismissRequest = { openDialog.value = false }
+            ) {
+                // Vlastný layout dialógu
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    PatternLockComponent()
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Don't have an account?? Clickable text
         Text(
@@ -93,7 +130,8 @@ fun LoginScreen(authManager: AuthManager) {
                 val intent = Intent(context, RegistrationActivity::class.java)
                 context.startActivity(intent)
             },
-            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)        )
+            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -109,12 +147,17 @@ fun LoginScreen(authManager: AuthManager) {
                     context.startActivity(intent)
                 } else {
                     // If login fails, show an error message in Toast
-                    Toast.makeText(context, "Login Failed: ${error ?: "Unknown Error"}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        "Login Failed: ${error ?: "Unknown Error"}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }) {
             Text(text = "Login")
         }
+
     }
 }
 

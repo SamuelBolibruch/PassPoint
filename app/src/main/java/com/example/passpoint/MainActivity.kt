@@ -1,9 +1,8 @@
 package com.example.passpoint
 
-import android.content.Context
+import PatternLockComponent
 import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.example.passpoint.services.AuthManager
 import com.example.passpoint.ui.theme.PassPointTheme
 
@@ -62,17 +60,7 @@ fun PatternInput(modifier: Modifier = Modifier, authManager: AuthManager) {
             Spacer(modifier = Modifier.weight(1f))
 
             // Vloženie PatternLockView pomocou AndroidView
-            AndroidView(
-                modifier = Modifier.fillMaxWidth(),
-                factory = { context ->
-                    // Načítanie XML layoutu
-                    val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-                    val view = inflater.inflate(R.layout.pattern_lock_view, null)
-
-                    // Vrátenie root view (LinearLayout) z layoutu
-                    view
-                }
-            )
+            PatternLockComponent()
 
             Spacer(modifier = Modifier.height(32.dp))
 
