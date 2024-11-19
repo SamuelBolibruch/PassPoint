@@ -2,6 +2,7 @@
 
 package com.example.passpoint.services
 
+import android.content.Context
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 
@@ -34,8 +35,9 @@ class AuthManager {
     }
 
     // Logout method
-    fun logoutUser() {
+    fun logoutUser(context: Context, onComplete: () -> Unit) {
         auth.signOut()
+        onComplete()  // Notify that logout is complete
     }
 
     // Get current user

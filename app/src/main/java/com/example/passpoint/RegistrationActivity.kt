@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -149,6 +151,18 @@ fun RegistrationFormScreen(
             textState = repeatPasswordState,
             optional = false
         )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Already have an account? Clickable text
+        Text(
+            text = "Already have an account?",
+            modifier = Modifier.clickable {
+                // Navigate to login screen when clicked
+                val intent = Intent(context, LoginActivity::class.java)
+                context.startActivity(intent)
+            },
+            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {

@@ -2,6 +2,7 @@ package com.example.passpoint
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -22,17 +23,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.passpoint.components.TextFieldWithLabel
+import com.example.passpoint.services.AuthManager
 import com.example.passpoint.ui.theme.PassPointTheme
 
 class LoginActivity : ComponentActivity() {
+    private val authManager = AuthManager()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -41,7 +42,7 @@ class LoginActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    LoginScreen()
+                    LoginScreen(authManager = authManager)
                 }
             }
         }
@@ -49,7 +50,7 @@ class LoginActivity : ComponentActivity() {
 }
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(authManager: AuthManager) {
     // Get the current context (this is the activity context)
     val context = LocalContext.current
 
@@ -82,28 +83,35 @@ fun LoginScreen() {
         TextFieldWithLabel(label = "Password", textState = passwordState, optional = false)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Clickable text to navigate to RegistrationActivity
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Don't have an account?? Clickable text
         Text(
-            text = "Go to Registration",
-            color = Color.Blue,
-            textDecoration = TextDecoration.Underline,
-            modifier = Modifier.clickable { navigateToRegistration(context) }
-        )
+            text = "Don't have an account?",
+            modifier = Modifier.clickable {
+                // Navigate to login screen when clicked
+                val intent = Intent(context, RegistrationActivity::class.java)
+                context.startActivity(intent)
+            },
+            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Login Button that navigates to MainActivity
         Button(onClick = {
-            // Access the values of the fields
             val email = emailState.value
             val password = passwordState.value
 
-            // Handle the login logic, for now, just print the values
-            println("Email: $email, Password: $password")
-
-            // Example: Navigate to MainActivity after login
-            val intent = Intent(context, MainActivity::class.java)
-            context.startActivity(intent)
+            // Call the login method from AuthManager
+            authManager.loginUser(email = email, password = password) { success, error ->
+                if (success) {
+                    // If login is successful, navigate to MainActivity
+                    val intent = Intent(context, MainActivity::class.java)
+                    context.startActivity(intent)
+                } else {
+                    // If login fails, show an error message in Toast
+                    Toast.makeText(context, "Login Failed: ${error ?: "Unknown Error"}", Toast.LENGTH_LONG).show()
+                }
+            }
         }) {
             Text(text = "Login")
         }
@@ -116,10 +124,10 @@ fun navigateToRegistration(context: android.content.Context) {
     context.startActivity(intent) // Start the RegistrationActivity
 }
 
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    PassPointTheme {
-        LoginScreen()
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun LoginScreenPreview() {
+//    PassPointTheme {
+//        LoginScreen()
+//    }
+//}
