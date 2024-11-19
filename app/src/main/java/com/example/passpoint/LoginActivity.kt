@@ -109,7 +109,6 @@ fun LoginScreen(authManager: AuthManager) {
                 // Vlastný layout dialógu
                 Column(
                     modifier = Modifier
-                        .padding(16.dp)
                         .fillMaxWidth()
                         .wrapContentHeight(),
                     horizontalAlignment = Alignment.CenterHorizontally
