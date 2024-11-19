@@ -10,7 +10,7 @@ import com.example.passpoint.R
 import com.itsxtt.patternlock.PatternLockView
 
 @Composable
-fun PatternLockComponent() {
+fun PatternLockComponent(onPatternComplete: (ArrayList<Int>) -> Boolean?) {
     AndroidView(
         modifier = Modifier
             .fillMaxWidth(),
@@ -34,9 +34,8 @@ fun PatternLockComponent() {
                 }
 
                 override fun onComplete(ids: ArrayList<Int>): Boolean {
-                    // Keď je pattern dokončený
-                    println(ids);
-                    return isPatternCorrect(ids) // Implementuj svoju logiku
+
+                    return onPatternComplete(ids) ?: false
                 }
             })
 

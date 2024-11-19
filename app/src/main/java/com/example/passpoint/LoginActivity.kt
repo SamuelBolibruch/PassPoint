@@ -114,7 +114,9 @@ fun LoginScreen(authManager: AuthManager) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
-                    PatternLockComponent()
+                    PatternLockComponent() {ids ->
+                        null
+                    }
                 }
             }
         }

@@ -60,7 +60,9 @@ fun PatternInput(modifier: Modifier = Modifier, authManager: AuthManager) {
             Spacer(modifier = Modifier.weight(1f))
 
             // Vloženie PatternLockView pomocou AndroidView
-            PatternLockComponent()
+            PatternLockComponent() {_ ->
+                null
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
@@ -7,5 +8,12 @@
     <com.itsxtt.patternlock.PatternLockView
         android:id="@+id/pattern_lock_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        app:plv_regularDotColor="#889E9E9E"
+        app:plv_selectedDotColor="#11668b"
+        app:plv_regularLineColor="#11668b"
+        app:plv_lineWidth="7dp"
+        app:plv_errorDuration="200"
+        app:plv_errorLineColor="#E14141"
+        app:plv_errorDotColor="#E14141" />
 </LinearLayout>

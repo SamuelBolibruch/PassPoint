@@ -3,13 +3,13 @@ package com.example.passpoint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.passpoint.components.registration.AdditionalInformations
+import com.example.passpoint.components.registration.CreatePatternLockScreen
 import com.example.passpoint.components.registration.RegistrationFormScreen
 import com.example.passpoint.services.AuthManager
 import com.example.passpoint.ui.theme.PassPointTheme
@@ -51,7 +51,7 @@ class RegistrationActivity : ComponentActivity() {
                         )
                     }
                     composable("create_pattern_password") {
-                        Text(text = "Ahojky")
+                        CreatePatternLockScreen()
                     }
                 }
             }
