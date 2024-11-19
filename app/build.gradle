@@ -27,20 +27,25 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
     kotlinOptions {
         jvmTarget = '1.8'
     }
+
     buildFeatures {
         compose true
     }
+
     composeOptions {
         kotlinCompilerExtensionVersion '1.4.3'
     }
-    packaging {
+
+    packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
@@ -61,6 +66,7 @@ dependencies {
     implementation 'androidx.compose.material3:material3'
     implementation 'com.gitlab.behametrics:logger-android:0.5.0'
     implementation 'com.google.firebase:firebase-auth:23.1.0'
+    implementation 'io.github.itsxtt:pattern-lock:0.2.0'
 
     // Testovanie
     testImplementation 'junit:junit:4.13.2'
