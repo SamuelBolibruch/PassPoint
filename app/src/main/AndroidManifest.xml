@@ -17,7 +17,7 @@
 
         <!-- Main Activity - This will now be the entry point -->
         <activity
-            android:name=".RegistrationActivity"
+            android:name=".LoginActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.PassPoint">
@@ -37,7 +37,7 @@
 
         <!-- Login Activity - Login Activity can be accessed from RegistrationActivity -->
         <activity
-            android:name=".LoginActivity"
+            android:name=".RegistrationActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.PassPoint">
