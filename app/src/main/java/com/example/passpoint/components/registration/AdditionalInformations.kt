@@ -20,6 +20,8 @@ import androidx.navigation.NavController
 import com.example.passpoint.components.DropdownWithLabel
 import com.example.passpoint.components.TextFieldWithLabel
 import com.example.passpoint.services.AuthManager
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 @Composable
 fun AdditionalInformations(
@@ -33,6 +35,9 @@ fun AdditionalInformations(
     val ageState = remember { mutableStateOf("0-18") }
     val genderState = remember { mutableStateOf("Male") }
     val handState = remember { mutableStateOf("Right-handed") }
+
+
+    val firestore = FirebaseFirestore.getInstance()
 
     // Layout for the "Continue" screen
     Column(
@@ -71,11 +76,34 @@ fun AdditionalInformations(
         Button(onClick = {
             authManager.registerUser(email = email, password = password) { success, errorMessage ->
                 if (success) {
-                    Toast.makeText(context, "Registration Successful", Toast.LENGTH_SHORT).show()
+                    // Získanie UID aktuálne prihláseného používateľa
+                    val currentUser = authManager.getCurrentUser()
+                    val uid = currentUser?.uid
 
-                    navController.navigate("create_pattern_password")
+                    if (uid != null) {
+                        // Pripraviť dáta na uloženie do Firestore
+                        val userData = hashMapOf(
+                            "username" to userNameState.value,
+                            "age" to ageState.value,
+                            "gender" to genderState.value,
+                            "handPreference" to handState.value,
+                            "email" to email // Pre istotu uložíme aj email
+                        )
+
+                        // Zápis údajov do kolekcie "users"
+                        firestore.collection("users").document(uid)
+                            .set(userData)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "User data saved successfully", Toast.LENGTH_SHORT).show()
+                                navController.navigate("create_pattern_password")
+                            }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(context, "Failed to save data: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                    } else {
+                        Toast.makeText(context, "Error: User ID not found!", Toast.LENGTH_SHORT).show()
+                    }
                 } else {
-                    // Show error message in Toast
                     Toast.makeText(
                         context,
                         "Registration Failed: ${errorMessage ?: "Unknown Error"}",

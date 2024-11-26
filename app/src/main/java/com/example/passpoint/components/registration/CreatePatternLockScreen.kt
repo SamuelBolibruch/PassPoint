@@ -20,10 +20,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun CreatePatternLockScreen() {
+    val firestore = FirebaseFirestore.getInstance() // Inicializácia Firestore
+    val auth = FirebaseAuth.getInstance() // Inicializácia Firebase Auth
     val context = LocalContext.current // Získaj kontext
+
     var firstPattern by remember { mutableStateOf<List<Int>?>(null) }
     var step by remember { mutableStateOf(1) } // 1: Zadaj heslo, 2: Potvrď heslo
     var message by remember { mutableStateOf("Draw your pattern") }
@@ -54,9 +59,32 @@ fun CreatePatternLockScreen() {
                     }
                     2 -> {
                         if (firstPattern == ids) {
-                            Toast.makeText(context, "Pattern successfully set!", Toast.LENGTH_SHORT).show()
-                            message = "Pattern successfully set!"
-                            step = 3
+                            // Vzor bol potvrdený, ulož do Firestore
+                            val currentUser = auth.currentUser
+                            val uid = currentUser?.uid
+
+                            if (uid != null) {
+                                val patternData = hashMapOf(
+                                    "pattern" to firstPattern // Pole čísiel predstavujúce vzor
+                                )
+
+                                firestore.collection("users").document(uid)
+                                    .update(patternData as Map<String, Any>) // Použitie `update` na aktualizáciu dokumentu
+                                    .addOnSuccessListener {
+                                        Toast.makeText(context, "Pattern successfully set!", Toast.LENGTH_SHORT).show()
+                                        message = "Pattern successfully set!"
+                                        step = 3
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(
+                                            context,
+                                            "Failed to save pattern: ${e.message}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                            } else {
+                                Toast.makeText(context, "Error: User not logged in!", Toast.LENGTH_SHORT).show()
+                            }
                             true
                         } else {
                             Toast.makeText(context, "Patterns do not match. Try again.", Toast.LENGTH_SHORT).show()

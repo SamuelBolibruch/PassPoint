@@ -67,6 +67,7 @@ dependencies {
     implementation 'com.gitlab.behametrics:logger-android:0.5.0'
     implementation 'com.google.firebase:firebase-auth:23.1.0'
     implementation 'io.github.itsxtt:pattern-lock:0.2.0'
+    implementation 'com.google.firebase:firebase-firestore:25.1.1'
 
     // Testovanie
     testImplementation 'junit:junit:4.13.2'
