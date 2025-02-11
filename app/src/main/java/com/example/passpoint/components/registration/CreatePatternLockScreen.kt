@@ -4,12 +4,14 @@ import PatternLockComponent
 import android.app.Activity
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +21,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -124,114 +129,115 @@ fun CreatePatternLockScreen() {
     var buttonVisible by remember { mutableStateOf(false) } // Premenná na kontrolu viditeľnosti tlačidla
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = message,
-            fontSize = 24.sp, // Zvýšenie veľkosti textu
-            fontWeight = FontWeight.Bold // Nastavenie tučného textu
-        )
-
+        Text(text = message, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(48.dp))
 
-        if (step != 4) {
+        if (step == 4 || step == 5) {
+            Text("Follow this pattern:", fontSize = 18.sp, fontWeight = FontWeight.Medium)
+            PatternGuide(step)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        if (step != 6) {
             PatternLockComponent { ids ->
                 when (step) {
                     1 -> {
                         firstPattern = ids
                         step = 2
                         message = "Confirm Your Pattern"
-                        true // Vráti `true`, ak je pattern správny
+                        true
                     }
-
                     2 -> {
                         if (firstPattern == ids) {
-                            // Vzor bol potvrdený, ulož do Firestore
                             val currentUser = auth.currentUser
                             val uid = currentUser?.uid
 
                             if (uid != null) {
-                                val patternData = hashMapOf(
-                                    "pattern" to firstPattern // Pole čísiel predstavujúce vzor
-                                )
-
+                                val patternData = hashMapOf("pattern" to firstPattern)
                                 firestore.collection("users").document(uid)
-                                    .update(patternData as Map<String, Any>) // Použitie `update` na aktualizáciu dokumentu
+                                    .update(patternData as Map<String, Any>)
                                     .addOnSuccessListener {
-                                        Toast.makeText(
-                                            context,
-                                            "Pattern successfully set!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        Toast.makeText(context, "Pattern successfully set!", Toast.LENGTH_SHORT).show()
                                         message = "Now train your biometrics!"
                                         Logger.start(context as Activity)
                                         step = 3
                                     }
                                     .addOnFailureListener { e ->
-                                        Toast.makeText(
-                                            context,
-                                            "Failed to save pattern: ${e.message}",
-                                            Toast.LENGTH_LONG
-                                        ).show()
+                                        Toast.makeText(context, "Failed to save pattern: ${e.message}", Toast.LENGTH_LONG).show()
                                     }
                             } else {
-                                Toast.makeText(
-                                    context,
-                                    "Error: User not logged in!",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                Toast.makeText(context, "Error: User not logged in!", Toast.LENGTH_SHORT).show()
                             }
                             true
                         } else {
-                            Toast.makeText(
-                                context,
-                                "Patterns do not match. Try again.",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast.makeText(context, "Patterns do not match. Try again.", Toast.LENGTH_SHORT).show()
                             message = "Choose Your Pattern"
                             step = 1
                             firstPattern = null
                             false
                         }
                     }
-
                     3 -> {
-                        // V kroku 3 opakovane kontroluj, či je zadaný vzor správny
                         if (firstPattern == ids) {
                             attempts++
-                            Log.d("PatternLock", "Attempts: $attempts")  // Logovanie počtu pokusov
+                            Log.d("PatternLock", "Attempts: $attempts")
                             if (attempts >= 10) {
-                                // Ak sa správne zadal vzor 10-krát
-                                Toast.makeText(
-                                    context,
-                                    "Pattern successfully trained 10 times!",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                // Pokračovať k ďalšiemu kroku, napr. ukončiť proces
-                                message = "You can now use your pattern"
-                                Logger.stop(context as Activity) // Vypne Logger
-                                step = 4 // Alebo iný krok, ak je to potrebné
-                                buttonVisible = true // Zobraz tlačidlo
+                                Toast.makeText(context, "Pattern successfully trained 10 times!", Toast.LENGTH_SHORT).show()
+                                message = "Now train predefined pattern!"
+                                step = 4
+                                attempts = 0 // Resetujeme počet pokusov
                             } else {
                                 message = "Pattern correct! $attempts/10"
                             }
                         } else {
                             message = "Incorrect pattern, try again."
                         }
-
                         true
                     }
-
+                    4 -> {
+                        if (arrayListOf(0, 3, 6, 7, 8) == ids) {
+                            attempts++
+                            Log.d("PatternLock", "Predefined pattern attempts: $attempts")
+                            if (attempts >= 10) {
+                                Toast.makeText(context, "Predefined pattern trained successfully!", Toast.LENGTH_SHORT).show()
+                                message = "Now train with second predefined pattern!"
+                                step = 5
+                                attempts = 0
+                            } else {
+                                message = "Correct predefined pattern! $attempts/10"
+                            }
+                        } else {
+                            message = "Incorrect predefined pattern, try again."
+                        }
+                        true
+                    }
+                    5 -> {
+                        if (arrayListOf(4, 2, 5, 7, 6, 3, 8, 0) == ids) {
+                            attempts++
+                            Log.d("PatternLock", "Second predefined pattern attempts: $attempts")
+                            if (attempts >= 10) {
+                                Toast.makeText(context, "Second predefined pattern trained successfully!", Toast.LENGTH_SHORT).show()
+                                message = "You can now use your pattern"
+                                Logger.stop(context as Activity)
+                                step = 6
+                                buttonVisible = true
+                            } else {
+                                message = "Correct second predefined pattern! $attempts/10"
+                            }
+                        } else {
+                            message = "Incorrect second predefined pattern, try again."
+                        }
+                        true
+                    }
                     else -> false
                 }
             }
         }
 
-        // Zobrazenie tlačidla po úspešnom tréningu
         if (buttonVisible) {
             Button(
                 onClick = {
@@ -239,10 +245,85 @@ fun CreatePatternLockScreen() {
                         sendPostRequests()
                         Toast.makeText(context, "Request sent!", Toast.LENGTH_SHORT).show()
                     }
-                          },
+                },
                 modifier = Modifier.padding(top = 16.dp)
             ) {
                 Text("Upload data")
+            }
+        }
+    }
+}
+
+
+@Composable
+fun PatternGuide(step: Int) {
+    val pattern = when (step) {
+        4 -> listOf(0, 3, 6, 7, 8) // First predefined pattern
+        5 -> listOf(4, 2, 5, 7, 6, 3, 8, 0) // Second predefined pattern
+        else -> emptyList()
+    }
+
+    // Define the Paint object for text rendering
+    val paint = android.graphics.Paint().apply {
+        color = android.graphics.Color.RED // Set text color to red
+        textSize = 100f // Increase the text size for numbers
+        typeface = android.graphics.Typeface.DEFAULT_BOLD // Make text bold
+        textAlign = android.graphics.Paint.Align.CENTER
+        isAntiAlias = true
+    }
+
+    if (pattern.isNotEmpty()) {
+        Canvas(modifier = Modifier.size(250.dp)) {
+            val gridSize = 3
+            val cellSize = size.width / gridSize
+
+            // Loop over each point in the pattern
+            for (i in 0 until gridSize) {
+                for (j in 0 until gridSize) {
+                    val index = i * gridSize + j
+                    val centerX = j * cellSize + cellSize / 2
+                    val centerY = i * cellSize + cellSize / 2
+
+                    // Draw the circle for the point (larger circles)
+                    drawCircle(
+                        color = if (pattern.contains(index)) Color.Blue else Color.Gray,
+                        radius = 25f, // Increase the radius of the circles
+                        center = Offset(centerX, centerY)
+                    )
+
+                    // If the point is part of the pattern, display its order (index + 1)
+                    if (pattern.contains(index)) {
+                        val number = (pattern.indexOf(index) + 1).toString() // The order number
+                        val textWidth = paint.measureText(number)
+                        val textHeight = paint.descent() - paint.ascent()
+
+                        // Draw the number slightly to the right of the center
+                        drawContext.canvas.nativeCanvas.drawText(
+                            number,
+                            centerX + 80, // Slightly move the number to the right
+                            centerY + textHeight / 4,
+                            paint
+                        )
+                    }
+                }
+            }
+
+            // Draw the lines connecting the pattern points
+            for (i in 0 until pattern.size - 1) {
+                val startIdx = pattern[i]
+                val endIdx = pattern[i + 1]
+
+                val startX = (startIdx % gridSize) * cellSize + cellSize / 2
+                val startY = (startIdx / gridSize) * cellSize + cellSize / 2
+                val endX = (endIdx % gridSize) * cellSize + cellSize / 2
+                val endY = (endIdx / gridSize) * cellSize + cellSize / 2
+
+                drawLine(
+                    color = Color.Blue,
+                    start = Offset(startX, startY),
+                    end = Offset(endX, endY),
+                    strokeWidth = 5f
+                )
             }
         }
     }
