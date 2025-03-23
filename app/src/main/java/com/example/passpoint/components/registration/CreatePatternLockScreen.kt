@@ -126,7 +126,7 @@ fun CreatePatternLockScreen() {
     var step by remember { mutableStateOf(1) } // 1: Zadaj heslo, 2: Potvrď heslo
     var message by remember { mutableStateOf("Draw your pattern") }
     var attempts by remember { mutableStateOf(0) } // Premenná na sledovanie pokusov
-    var buttonVisible by remember { mutableStateOf(false) } // Premenná na kontrolu viditeľnosti tlačidla
+//    var buttonVisible by remember { mutableStateOf(false) } // Premenná na kontrolu viditeľnosti tlačidla
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -236,7 +236,7 @@ fun CreatePatternLockScreen() {
                                 message = "You can now use your pattern"
                                 Logger.stop(context as Activity)
                                 step = 6
-                                buttonVisible = true
+//                                buttonVisible = true
 
                                 // 🔽 Automatické odoslanie dát po 25 pokusoch
                                 CoroutineScope(Dispatchers.Main).launch {
@@ -256,19 +256,19 @@ fun CreatePatternLockScreen() {
             }
         }
 
-        if (buttonVisible) {
-            Button(
-                onClick = {
-                    CoroutineScope(Dispatchers.Main).launch {
-                        sendPostRequests()
-                        Toast.makeText(context, "Request sent!", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                modifier = Modifier.padding(top = 16.dp)
-            ) {
-                Text("Upload data")
-            }
-        }
+//        if (buttonVisible) {
+//            Button(
+//                onClick = {
+//                    CoroutineScope(Dispatchers.Main).launch {
+//                        sendPostRequests()
+//                        Toast.makeText(context, "Request sent!", Toast.LENGTH_SHORT).show()
+//                    }
+//                },
+//                modifier = Modifier.padding(top = 16.dp)
+//            ) {
+//                Text("Upload data")
+//            }
+//        }
     }
 }
 
