@@ -162,7 +162,7 @@ fun CreatePatternLockScreen() {
                                     .update(patternData as Map<String, Any>)
                                     .addOnSuccessListener {
                                         Toast.makeText(context, "Pattern successfully set!", Toast.LENGTH_SHORT).show()
-                                        message = "Now train your biometrics!"
+                                        message = "Now train your biometrics with your pattern"
                                         Logger.start(context as Activity)
                                         step = 3
                                     }
@@ -185,13 +185,19 @@ fun CreatePatternLockScreen() {
                         if (firstPattern == ids) {
                             attempts++
                             Log.d("PatternLock", "Attempts: $attempts")
-                            if (attempts >= 10) {
-                                Toast.makeText(context, "Pattern successfully trained 10 times!", Toast.LENGTH_SHORT).show()
+                            if (attempts >= 25) {
+                                Toast.makeText(context, "Pattern successfully trained 25 times!", Toast.LENGTH_SHORT).show()
                                 message = "Now train predefined pattern!"
                                 step = 4
                                 attempts = 0 // Resetujeme počet pokusov
+
+                                // 🔽 Automatické odoslanie dát po 25 pokusoch
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    sendPostRequests()
+                                    Toast.makeText(context, "Data sent to server!", Toast.LENGTH_SHORT).show()
+                                }
                             } else {
-                                message = "Pattern correct! $attempts/10"
+                                message = "Pattern correct! $attempts/25"
                             }
                         } else {
                             message = "Incorrect pattern, try again."
@@ -202,13 +208,19 @@ fun CreatePatternLockScreen() {
                         if (arrayListOf(0, 3, 6, 7, 8) == ids) {
                             attempts++
                             Log.d("PatternLock", "Predefined pattern attempts: $attempts")
-                            if (attempts >= 10) {
+                            if (attempts >= 25) {
                                 Toast.makeText(context, "Predefined pattern trained successfully!", Toast.LENGTH_SHORT).show()
                                 message = "Now train with second predefined pattern!"
                                 step = 5
                                 attempts = 0
+
+                                // 🔽 Automatické odoslanie dát po 25 pokusoch
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    sendPostRequests()
+                                    Toast.makeText(context, "Data sent to server!", Toast.LENGTH_SHORT).show()
+                                }
                             } else {
-                                message = "Correct predefined pattern! $attempts/10"
+                                message = "Pattern correct! $attempts/25"
                             }
                         } else {
                             message = "Incorrect predefined pattern, try again."
@@ -219,14 +231,20 @@ fun CreatePatternLockScreen() {
                         if (arrayListOf(4, 2, 5, 7, 6, 3, 8, 0) == ids) {
                             attempts++
                             Log.d("PatternLock", "Second predefined pattern attempts: $attempts")
-                            if (attempts >= 10) {
+                            if (attempts >= 25) {
                                 Toast.makeText(context, "Second predefined pattern trained successfully!", Toast.LENGTH_SHORT).show()
                                 message = "You can now use your pattern"
                                 Logger.stop(context as Activity)
                                 step = 6
                                 buttonVisible = true
+
+                                // 🔽 Automatické odoslanie dát po 25 pokusoch
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    sendPostRequests()
+                                    Toast.makeText(context, "Data sent to server!", Toast.LENGTH_SHORT).show()
+                                }
                             } else {
-                                message = "Correct second predefined pattern! $attempts/10"
+                                message = "Pattern correct! $attempts/25"
                             }
                         } else {
                             message = "Incorrect second predefined pattern, try again."
