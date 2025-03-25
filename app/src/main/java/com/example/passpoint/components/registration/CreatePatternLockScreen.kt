@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,6 +32,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -44,8 +44,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 
-// Funkcia na vykonanie POST požiadavky v asynchrónnom prostredí
-suspend fun sendPostRequests() {
+suspend fun sendPostRequests(vzor_id: String) {
     val client = OkHttpClient()
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid ?: run {
@@ -70,12 +69,14 @@ suspend fun sendPostRequests() {
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("userid", userId)
                 .addFormDataPart("type", type)
+                .addFormDataPart("vzor_id", vzor_id)
                 .addFormDataPart("file", file.name, file.asRequestBody("text/csv".toMediaTypeOrNull()))
                 .build()
         } catch (e: Exception) {
             Log.e("SendPostRequests", "Error building request body: ${e.message}")
             continue
         }
+
 
         val request = Request.Builder()
             .url("https://biopassword.jecool.net/db/saveData.php")
@@ -101,7 +102,6 @@ suspend fun sendPostRequests() {
                         Log.d("SendPostRequests", "Message: $message")
 
                         // Vymazanie obsahu súboru po úspešnom odoslaní
-                        file.delete()
                         Log.d("SendPostRequests", "File content cleared successfully for type: $type")
                     } catch (e: JSONException) {
                         Log.e("SendPostRequests", "Failed to parse JSON: ${e.message}")
@@ -118,15 +118,15 @@ suspend fun sendPostRequests() {
 
 @Composable
 fun CreatePatternLockScreen() {
-    val firestore = FirebaseFirestore.getInstance() // Inicializácia Firestore
-    val auth = FirebaseAuth.getInstance() // Inicializácia Firebase Auth
-    val context = LocalContext.current // Získaj kontext
+    val firestore = FirebaseFirestore.getInstance()
+    val auth = FirebaseAuth.getInstance()
+    val context = LocalContext.current
+    val activity = context as Activity
 
     var firstPattern by remember { mutableStateOf<List<Int>?>(null) }
-    var step by remember { mutableStateOf(1) } // 1: Zadaj heslo, 2: Potvrď heslo
+    var step by remember { mutableStateOf(1) }
     var message by remember { mutableStateOf("Draw your pattern") }
-    var attempts by remember { mutableStateOf(0) } // Premenná na sledovanie pokusov
-//    var buttonVisible by remember { mutableStateOf(false) } // Premenná na kontrolu viditeľnosti tlačidla
+    var attempts by remember { mutableStateOf(0) }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -150,6 +150,8 @@ fun CreatePatternLockScreen() {
                         step = 2
                         message = "Confirm Your Pattern"
                         true
+
+
                     }
                     2 -> {
                         if (firstPattern == ids) {
@@ -163,8 +165,16 @@ fun CreatePatternLockScreen() {
                                     .addOnSuccessListener {
                                         Toast.makeText(context, "Pattern successfully set!", Toast.LENGTH_SHORT).show()
                                         message = "Now train your biometrics with your pattern"
-                                        Logger.start(context as Activity)
+                                        Logger.start(activity)
                                         step = 3
+
+                                        File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
+                                        File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
+                                        File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
+
+                                        File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
+                                        File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
+                                        File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
                                     }
                                     .addOnFailureListener { e ->
                                         Toast.makeText(context, "Failed to save pattern: ${e.message}", Toast.LENGTH_LONG).show()
@@ -185,16 +195,25 @@ fun CreatePatternLockScreen() {
                         if (firstPattern == ids) {
                             attempts++
                             Log.d("PatternLock", "Attempts: $attempts")
-                            if (attempts >= 25) {
+                            if (attempts >= 2) { //TODO ZMENIT NA 25
                                 Toast.makeText(context, "Pattern successfully trained 25 times!", Toast.LENGTH_SHORT).show()
                                 message = "Now train predefined pattern!"
                                 step = 4
-                                attempts = 0 // Resetujeme počet pokusov
+                                attempts = 0
 
-                                // 🔽 Automatické odoslanie dát po 25 pokusoch
+                                // Stop logger BEFORE sending data
+                                //Logger.stop(activity)
                                 CoroutineScope(Dispatchers.Main).launch {
-                                    sendPostRequests()
+                                    delay(100) // Small delay to ensure logger stopped
+                                    sendPostRequests("1")
                                     Toast.makeText(context, "Data sent to server!", Toast.LENGTH_SHORT).show()
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
+                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
+
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
+                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
                                 }
                             } else {
                                 message = "Pattern correct! $attempts/25"
@@ -208,15 +227,24 @@ fun CreatePatternLockScreen() {
                         if (arrayListOf(0, 3, 6, 7, 8) == ids) {
                             attempts++
                             Log.d("PatternLock", "Predefined pattern attempts: $attempts")
-                            if (attempts >= 25) {
+                            if (attempts >= 2) { //TODO ZMENIT NA 25
                                 Toast.makeText(context, "Predefined pattern trained successfully!", Toast.LENGTH_SHORT).show()
                                 message = "Now train with second predefined pattern!"
                                 step = 5
                                 attempts = 0
 
-                                // 🔽 Automatické odoslanie dát po 25 pokusoch
+                                // Stop logger BEFORE sending data
+                               // Logger.stop(activity)
                                 CoroutineScope(Dispatchers.Main).launch {
-                                    sendPostRequests()
+                                    delay(100)
+                                    sendPostRequests("2")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
+                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
+
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
+                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
                                     Toast.makeText(context, "Data sent to server!", Toast.LENGTH_SHORT).show()
                                 }
                             } else {
@@ -231,16 +259,23 @@ fun CreatePatternLockScreen() {
                         if (arrayListOf(4, 2, 5, 7, 6, 3, 8, 0) == ids) {
                             attempts++
                             Log.d("PatternLock", "Second predefined pattern attempts: $attempts")
-                            if (attempts >= 25) {
+                            if (attempts >= 2) { //TODO ZMENIT NA 25
                                 Toast.makeText(context, "Second predefined pattern trained successfully!", Toast.LENGTH_SHORT).show()
                                 message = "You can now use your pattern"
-                                Logger.stop(context as Activity)
                                 step = 6
-//                                buttonVisible = true
 
-                                // 🔽 Automatické odoslanie dát po 25 pokusoch
+                                // Final stop - no restart needed
+                                Logger.stop(activity)
                                 CoroutineScope(Dispatchers.Main).launch {
-                                    sendPostRequests()
+                                    delay(100)
+                                    sendPostRequests("3")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
+                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
+
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
+                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
                                     Toast.makeText(context, "Data sent to server!", Toast.LENGTH_SHORT).show()
                                 }
                             } else {
@@ -255,23 +290,8 @@ fun CreatePatternLockScreen() {
                 }
             }
         }
-
-//        if (buttonVisible) {
-//            Button(
-//                onClick = {
-//                    CoroutineScope(Dispatchers.Main).launch {
-//                        sendPostRequests()
-//                        Toast.makeText(context, "Request sent!", Toast.LENGTH_SHORT).show()
-//                    }
-//                },
-//                modifier = Modifier.padding(top = 16.dp)
-//            ) {
-//                Text("Upload data")
-//            }
-//        }
     }
 }
-
 
 @Composable
 fun PatternGuide(step: Int) {
@@ -281,7 +301,6 @@ fun PatternGuide(step: Int) {
         else -> emptyList()
     }
 
-    // Define the Paint object for text rendering
     val paint = android.graphics.Paint().apply {
         color = android.graphics.Color.RED // Set text color to red
         textSize = 100f // Increase the text size for numbers
@@ -295,7 +314,6 @@ fun PatternGuide(step: Int) {
             val gridSize = 3
             val cellSize = size.width / gridSize
 
-            // Loop over each point in the pattern
             for (i in 0 until gridSize) {
                 for (j in 0 until gridSize) {
                     val index = i * gridSize + j
@@ -326,7 +344,6 @@ fun PatternGuide(step: Int) {
                 }
             }
 
-            // Draw the lines connecting the pattern points
             for (i in 0 until pattern.size - 1) {
                 val startIdx = pattern[i]
                 val endIdx = pattern[i + 1]
@@ -346,3 +363,6 @@ fun PatternGuide(step: Int) {
         }
     }
 }
+
+
+
