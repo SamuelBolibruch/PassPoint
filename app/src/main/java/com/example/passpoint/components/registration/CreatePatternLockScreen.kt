@@ -167,11 +167,6 @@ fun CreatePatternLockScreen() {
                                         message = "Now train your biometrics with your pattern"
                                         Logger.start(activity)
                                         step = 3
-
-                                        File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
-                                        File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
-                                        File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
-
                                         File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                         File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                         File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
@@ -207,10 +202,6 @@ fun CreatePatternLockScreen() {
                                     delay(100) // Small delay to ensure logger stopped
                                     sendPostRequests("1")
                                     Toast.makeText(context, "Data sent to server!", Toast.LENGTH_SHORT).show()
-                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
-                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
-                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
-
                                     File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                     File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                     File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
@@ -238,10 +229,6 @@ fun CreatePatternLockScreen() {
                                 CoroutineScope(Dispatchers.Main).launch {
                                     delay(100)
                                     sendPostRequests("2")
-                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
-                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
-                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
-
                                     File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                     File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                     File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
@@ -269,10 +256,6 @@ fun CreatePatternLockScreen() {
                                 CoroutineScope(Dispatchers.Main).launch {
                                     delay(100)
                                     sendPostRequests("3")
-                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
-                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
-                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
-
                                     File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                     File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                     File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
