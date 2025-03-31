@@ -167,6 +167,11 @@ fun CreatePatternLockScreen() {
                                         message = "Now train your biometrics with your pattern"
                                         Logger.start(activity)
                                         step = 3
+
+                                        File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
+                                        File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
+                                        File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
+
                                         File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                         File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                         File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
@@ -197,11 +202,15 @@ fun CreatePatternLockScreen() {
                                 attempts = 0
 
                                 // Stop logger BEFORE sending data
-                                //Logger.stop(activity)
+                                Logger.stop(activity)
                                 CoroutineScope(Dispatchers.Main).launch {
-                                    delay(100) // Small delay to ensure logger stopped
+                                    delay(3000) // Small delay to ensure logger stopped
                                     sendPostRequests("1")
                                     Toast.makeText(context, "Data sent to server!", Toast.LENGTH_SHORT).show()
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
+                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
+
                                     File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                     File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                     File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
@@ -215,6 +224,7 @@ fun CreatePatternLockScreen() {
                         true
                     }
                     4 -> {
+                        Logger.start(activity)
                         if (arrayListOf(0, 3, 6, 7, 8) == ids) {
                             attempts++
                             Log.d("PatternLock", "Predefined pattern attempts: $attempts")
@@ -225,10 +235,14 @@ fun CreatePatternLockScreen() {
                                 attempts = 0
 
                                 // Stop logger BEFORE sending data
-                               // Logger.stop(activity)
+                                Logger.stop(activity)
                                 CoroutineScope(Dispatchers.Main).launch {
-                                    delay(100)
+                                    delay(3000)
                                     sendPostRequests("2")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("")
+                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("")
+                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("")
+
                                     File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                     File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
                                     File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
@@ -243,6 +257,7 @@ fun CreatePatternLockScreen() {
                         true
                     }
                     5 -> {
+                        Logger.start(activity)
                         if (arrayListOf(4, 2, 5, 7, 6, 3, 8, 0) == ids) {
                             attempts++
                             Log.d("PatternLock", "Second predefined pattern attempts: $attempts")
@@ -254,13 +269,30 @@ fun CreatePatternLockScreen() {
                                 // Final stop - no restart needed
                                 Logger.stop(activity)
                                 CoroutineScope(Dispatchers.Main).launch {
-                                    delay(100)
+                                    delay(3000)
                                     sendPostRequests("3")
-                                    File("/data/data/com.example.passpoint/files/logs/sensor_accelerometer.csv").writeText("input,session_id,timestamp,x,y,z\n")
-                                    File("/data/data/com.example.passpoint/files/logs/sensor_gyroscope.csv").writeText("input,session_id,timestamp,x,y,z\n")
-                                    File("/data/data/com.example.passpoint/files/logs/touch.csv").writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
-                                    Toast.makeText(context, "Data sent to server!", Toast.LENGTH_SHORT).show()
+
+                                    val logDir = "/data/data/com.example.passpoint/files/logs"
+                                    val filesToDelete = listOf(
+                                        "sensor_accelerometer.csv",
+                                        "sensor_gyroscope.csv",
+                                        "touch.csv",
+                                        "orientation.csv"
+                                    )
+
+                                    for (filename in filesToDelete) {
+                                        val file = File("$logDir/$filename")
+                                        if (file.exists()) {
+                                            val deleted = file.delete()
+                                            Log.d("Cleanup", "Deleted $filename: $deleted")
+                                        } else {
+                                            Log.w("Cleanup", "$filename not found")
+                                        }
+                                    }
+
+                                    Toast.makeText(context, "Data sent to server and files deleted!", Toast.LENGTH_SHORT).show()
                                 }
+
                             } else {
                                 message = "Pattern correct! $attempts/25"
                             }
@@ -346,6 +378,5 @@ fun PatternGuide(step: Int) {
         }
     }
 }
-
 
 
