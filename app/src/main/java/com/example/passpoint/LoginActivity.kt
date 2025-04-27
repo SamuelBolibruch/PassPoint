@@ -1,8 +1,16 @@
 package com.example.passpoint
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.io.File
+import android.app.Activity
+import com.behametrics.logger.Logger
 import PatternLockComponent
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,6 +43,7 @@ import com.example.passpoint.components.TextFieldWithLabel
 import com.example.passpoint.services.AuthManager
 import com.example.passpoint.ui.theme.PassPointTheme
 
+
 class LoginActivity : ComponentActivity() {
     private val authManager = AuthManager()
 
@@ -57,7 +66,6 @@ class LoginActivity : ComponentActivity() {
 fun LoginScreen(authManager: AuthManager) {
     // Get the current context (this is the activity context)
     val context = LocalContext.current
-    val openDialog = remember { mutableStateOf(false) } // Stav pre otvorenie dialógu
 
     // State for storing input values
     val emailState = remember { mutableStateOf("") }
@@ -89,37 +97,20 @@ fun LoginScreen(authManager: AuthManager) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Change here, instead of opening a dialog, we open the new activity for pattern lock
         Image(
-            painter = painterResource(id = R.drawable.pattern_lock), // Váš obrázok pattern lock
+            painter = painterResource(id = R.drawable.pattern_lock), // Your pattern lock image
             contentDescription = "Pattern lock",
             modifier = Modifier
                 .width(50.dp)
                 .height(50.dp)
                 .clickable {
-                    // Zobraziť dialóg pri kliknutí na obrázok
-                    openDialog.value = true
+                    // Navigate to PatternLockActivity instead of showing a dialog
+                    val intent = Intent(context, PatternLockActivity::class.java)
+                    context.startActivity(intent)
                 },
             contentScale = ContentScale.Fit
         )
-
-        if (openDialog.value) {
-            Dialog(
-                onDismissRequest = { openDialog.value = false }
-            ) {
-                // Vlastný layout dialógu
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-                    PatternLockComponent() {ids ->
-                        null
-                    }
-                }
-            }
-        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -127,7 +118,7 @@ fun LoginScreen(authManager: AuthManager) {
         Text(
             text = "Don't have an account?",
             modifier = Modifier.clickable {
-                // Navigate to login screen when clicked
+                // Navigate to registration screen
                 val intent = Intent(context, RegistrationActivity::class.java)
                 context.startActivity(intent)
             },
@@ -158,20 +149,5 @@ fun LoginScreen(authManager: AuthManager) {
         }) {
             Text(text = "Login")
         }
-
     }
 }
-
-// Function to navigate to RegistrationActivity
-fun navigateToRegistration(context: android.content.Context) {
-    val intent = Intent(context, RegistrationActivity::class.java)
-    context.startActivity(intent) // Start the RegistrationActivity
-}
-
-//@Preview(showBackground = true)
-//@Composable
-//fun LoginScreenPreview() {
-//    PassPointTheme {
-//        LoginScreen()
-//    }
-//}

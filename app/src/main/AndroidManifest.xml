@@ -44,6 +44,13 @@
             android:theme="@style/Theme.PassPoint">
         </activity>
 
+        <!-- Pattern Lock Activity - Added the new activity -->
+        <activity
+            android:name=".PatternLockActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.PassPoint">
+        </activity>
     </application>
 
 </manifest>
