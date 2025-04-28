@@ -1,28 +1,39 @@
 package com.example.passpoint
 
-import java.io.File
+import PatternLockComponent
 import android.app.Activity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.behametrics.logger.Logger
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
-import okhttp3.*
-import java.io.IOException
-import PatternLockComponent
-import android.util.Log
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.Response
+import java.io.File
+import java.io.IOException
 
 class PatternLockActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,30 +77,27 @@ fun PatternLockScreen() {
         Logger.start(activity)
 
         PatternLockComponent { ids ->
-
             CoroutineScope(Dispatchers.Main).launch {
-            }
-            Logger.stop(activity)
-            // Add vzor_id column to each row (but not in header)
+                Logger.stop(activity)
 
-            CoroutineScope(Dispatchers.Main).launch {
-                delay(3000) // 3 seconds delay
+                delay(2000) // teraz je delay pekne vo vnútri coroutine
 
                 addVzorIdToFile(accelFile)
                 addVzorIdToFile(gyroFile)
                 addVzorIdToFile(touchFile)
-            }
-            // Upload the files
-            uploadFiles(listOf(accelFile, gyroFile, touchFile)) { success ->
-                if (success) {
-                    Toast.makeText(context, "Login biometrics sent!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Failed to send biometrics.", Toast.LENGTH_SHORT).show()
+
+                uploadFiles(listOf(accelFile, gyroFile, touchFile)) { success ->
+                    if (success) {
+                        Toast.makeText(context, "Login biometrics sent!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed to send biometrics.", Toast.LENGTH_SHORT).show()
+                    }
+                    activity.finish()
                 }
-                activity.finish()
             }
             true
         }
+
 
         Spacer(modifier = Modifier.height(20.dp))
     }
@@ -113,23 +121,32 @@ fun uploadFiles(files: List<File>, onResult: (Boolean) -> Unit) {
 
     val builder = MultipartBody.Builder().setType(MultipartBody.FORM)
     for (file in files) {
+        val fieldName = when {
+            file.name.contains("accelerometer", ignoreCase = true) -> "accelerometer"
+            file.name.contains("gyroscope", ignoreCase = true) -> "gyroscope"
+            file.name.contains("touch", ignoreCase = true) -> "touch"
+            else -> "unknown"
+        }
+
         builder.addFormDataPart(
-            "files",
+            fieldName,  // SPRÁVNY názov field-u
             file.name,
             RequestBody.create("text/csv".toMediaTypeOrNull(), file)
         )
     }
+
     val requestBody = builder.build()
 
     val request = Request.Builder()
-        .url("http://tp-production-97a4.up.railway.app/process/") // správny endpoint
+        .url("https://tp-production-97a4.up.railway.app/process/") // správny endpoint
         .post(requestBody)
         .build()
 
-    Log.d("PatternLockActivity", "Sending request to server...") // Log pre kontrolu, že požiadavka ide
+    Log.d("PatternLockActivity", "Sending request to server...")
+
     client.newCall(request).enqueue(object : Callback {
         override fun onFailure(call: Call, e: IOException) {
-            Log.d("PatternLockActivity", "Request failed: ${e.message}") // Log pri zlyhaní požiadavky
+            Log.d("PatternLockActivity", "Request failed: ${e.message}")
             android.os.Handler(android.os.Looper.getMainLooper()).post {
                 onResult(false)
             }
@@ -137,13 +154,17 @@ fun uploadFiles(files: List<File>, onResult: (Boolean) -> Unit) {
 
         override fun onResponse(call: Call, response: Response) {
             if (response.isSuccessful) {
-                Log.d("PatternLockActivity", "Request sent successfully!") // Log pri úspešnom odoslaní požiadavky
+                Log.d("PatternLockActivity", "UPLOAD: Request successful!")
             } else {
-                Log.d("PatternLockActivity", "Request failed with status code: ${response.code}") // Log pri zlyhaní
+                Log.d("PatternLockActivity", "UPLOAD: Request failed with code: ${response.code}")
             }
+
+            Log.d("PatternLockActivity", "Server response: ${response.body?.string()}") // Toto ti vypíše obsah odpovede
+
             android.os.Handler(android.os.Looper.getMainLooper()).post {
                 onResult(response.isSuccessful)
             }
         }
     })
 }
+
