@@ -13,13 +13,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.behametrics.logger.Logger
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -48,6 +53,30 @@ class PatternLockActivity : ComponentActivity() {
 @Composable
 fun PatternLockScreen() {
     val context = LocalContext.current
+    val showDialog = remember { mutableStateOf(false) }
+    val dialogMessage = remember { mutableStateOf("") }
+    val isSuccess = remember { mutableStateOf(false) }
+
+    if (showDialog.value) {
+        AlertDialog(
+            onDismissRequest = {
+                showDialog.value = false
+                (context as Activity).finish()
+            },
+            title = { Text(if (isSuccess.value) "Success" else "Authentication Failed") },
+            text = { Text(dialogMessage.value) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDialog.value = false
+                        (context as Activity).finish()
+                    }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -72,7 +101,6 @@ fun PatternLockScreen() {
         gyroFile.writeText("input,session_id,timestamp,x,y,z\n")
         touchFile.writeText("input,session_id,timestamp,event_type,event_type_detail,pointer_id,x,y,pressure,size,touch_major,touch_minor,raw_x,raw_y\n")
 
-
         val activity = context as Activity
         Logger.start(activity)
 
@@ -80,24 +108,30 @@ fun PatternLockScreen() {
             CoroutineScope(Dispatchers.Main).launch {
                 Logger.stop(activity)
 
-                delay(2000) // teraz je delay pekne vo vnútri coroutine
+                delay(2000)
 
                 addVzorIdToFile(accelFile)
                 addVzorIdToFile(gyroFile)
                 addVzorIdToFile(touchFile)
 
-                uploadFiles(listOf(accelFile, gyroFile, touchFile)) { success ->
+                uploadFiles(listOf(accelFile, gyroFile, touchFile)) { success, match ->
                     if (success) {
-                        Toast.makeText(context, "Login biometrics sent!", Toast.LENGTH_SHORT).show()
+                        if (match) {
+                            dialogMessage.value = "Authentication successful!"
+                            isSuccess.value = true
+                        } else {
+                            dialogMessage.value = "Authentication failed."
+                            isSuccess.value = false
+                        }
+                        showDialog.value = true
                     } else {
                         Toast.makeText(context, "Failed to send biometrics.", Toast.LENGTH_SHORT).show()
+                        activity.finish()
                     }
-                    activity.finish()
                 }
             }
             true
         }
-
 
         Spacer(modifier = Modifier.height(20.dp))
     }
@@ -105,18 +139,20 @@ fun PatternLockScreen() {
 
 // Function to add vzor_id to each file without adding it to the header
 fun addVzorIdToFile(file: File) {
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: "unknown_user"
     val lines = file.readLines().toMutableList()
 
-    lines[0] = lines[0] + ",vzor_id"
+    // Pridaj hlavičky
+    lines[0] = lines[0] + ",vzor_id,userid"
 
     for (i in 1 until lines.size) {
-        lines[i] = lines[i] + ",1"  // Append vzor_id=1 to each row
+        lines[i] = lines[i] + ",1,$currentUserId"  // vzor_id = 1, userid = Firebase UID
     }
 
     file.writeText(lines.joinToString("\n"))
 }
 
-fun uploadFiles(files: List<File>, onResult: (Boolean) -> Unit) {
+fun uploadFiles(files: List<File>, onResult: (Boolean, Boolean) -> Unit) {
     val client = OkHttpClient()
 
     val builder = MultipartBody.Builder().setType(MultipartBody.FORM)
@@ -129,7 +165,7 @@ fun uploadFiles(files: List<File>, onResult: (Boolean) -> Unit) {
         }
 
         builder.addFormDataPart(
-            fieldName,  // SPRÁVNY názov field-u
+            fieldName,
             file.name,
             RequestBody.create("text/csv".toMediaTypeOrNull(), file)
         )
@@ -138,7 +174,7 @@ fun uploadFiles(files: List<File>, onResult: (Boolean) -> Unit) {
     val requestBody = builder.build()
 
     val request = Request.Builder()
-        .url("https://tp-production-97a4.up.railway.app/process/") // správny endpoint
+        .url("https://tp-production-97a4.up.railway.app/process/")
         .post(requestBody)
         .build()
 
@@ -148,23 +184,23 @@ fun uploadFiles(files: List<File>, onResult: (Boolean) -> Unit) {
         override fun onFailure(call: Call, e: IOException) {
             Log.d("PatternLockActivity", "Request failed: ${e.message}")
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                onResult(false)
+                onResult(false, false)
             }
         }
 
         override fun onResponse(call: Call, response: Response) {
-            if (response.isSuccessful) {
-                Log.d("PatternLockActivity", "UPLOAD: Request successful!")
-            } else {
-                Log.d("PatternLockActivity", "UPLOAD: Request failed with code: ${response.code}")
+            val responseBody = response.body?.string()
+            Log.d("PatternLockActivity", "Server response: $responseBody")
+
+            val isMatch = try {
+                responseBody?.contains("\"match\":true") ?: false
+            } catch (e: Exception) {
+                false
             }
 
-            Log.d("PatternLockActivity", "Server response: ${response.body?.string()}") // Toto ti vypíše obsah odpovede
-
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                onResult(response.isSuccessful)
+                onResult(response.isSuccessful, isMatch)
             }
         }
     })
 }
-

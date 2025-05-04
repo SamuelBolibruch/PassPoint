@@ -135,7 +135,7 @@ fun LoginScreen(authManager: AuthManager) {
             authManager.loginUser(email = email, password = password) { success, error ->
                 if (success) {
                     // If login is successful, navigate to MainActivity
-                    val intent = Intent(context, MainActivity::class.java)
+                    val intent = Intent(context, PatternLockActivity::class.java)
                     context.startActivity(intent)
                 } else {
                     // If login fails, show an error message in Toast
