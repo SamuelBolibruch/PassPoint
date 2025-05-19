@@ -1,16 +1,7 @@
 package com.example.passpoint
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.io.File
-import android.app.Activity
-import com.behametrics.logger.Logger
-import PatternLockComponent
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -38,7 +28,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.example.passpoint.components.TextFieldWithLabel
 import com.example.passpoint.services.AuthManager
 import com.example.passpoint.ui.theme.PassPointTheme
@@ -93,7 +82,12 @@ fun LoginScreen(authManager: AuthManager) {
         // Add input fields and pass state to TextFieldWithLabel
         TextFieldWithLabel(label = "Email", textState = emailState, optional = false)
         Spacer(modifier = Modifier.height(8.dp))
-        TextFieldWithLabel(label = "Password", textState = passwordState, optional = false)
+        TextFieldWithLabel(
+            label = "Password",
+            textState = passwordState,
+            optional = false,
+            isPassword = true // <- toto pridaj
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 

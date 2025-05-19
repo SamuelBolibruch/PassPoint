@@ -94,13 +94,9 @@ fun RegistrationFormScreen(
         // Form Fields
         TextFieldWithLabel(label = "Email", textState = emailState, optional = false)
         Spacer(modifier = Modifier.height(8.dp))
-        TextFieldWithLabel(label = "Password", textState = passwordState, optional = false)
+        TextFieldWithLabel(label = "Password", textState = passwordState, optional = false, isPassword = true)
         Spacer(modifier = Modifier.height(8.dp))
-        TextFieldWithLabel(
-            label = "Repeat Password",
-            textState = repeatPasswordState,
-            optional = false
-        )
+        TextFieldWithLabel(label = "Repeat Password", textState = repeatPasswordState, optional = false, isPassword = true)
         Spacer(modifier = Modifier.height(16.dp))
 
         // Already have an account? Clickable text

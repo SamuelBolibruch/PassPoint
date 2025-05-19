@@ -17,24 +17,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun TextFieldWithLabel(label: String, textState: MutableState<String>, optional: Boolean) {
+fun TextFieldWithLabel(
+    label: String,
+    textState: MutableState<String>,
+    optional: Boolean,
+    isPassword: Boolean = false // <- nový parameter
+) {
+    val visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None
+
     Column {
         // Zobraziť label s "optional" ak je parameter optional true
         Text(
             text = buildString {
                 append(label)
                 if (optional) {
-                    append(" (")
-                    append("optional)")
+                    append(" (optional)")
                 }
             },
             color = Color.Gray,
-            fontWeight = FontWeight.Bold,  // Nastavenie textu na tučný
-            modifier = Modifier.padding(start = 22.dp) // Padding na pravej strane
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 22.dp)
         )
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -43,16 +51,18 @@ fun TextFieldWithLabel(label: String, textState: MutableState<String>, optional:
         BasicTextField(
             value = textState.value,
             onValueChange = { textState.value = it },
+            visualTransformation = visualTransformation, // <- tu sa použije maskovanie
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp)) // Zaoblené rohy
-                .border(2.dp, Color.Gray, RoundedCornerShape(20.dp)) // Tmavo sivý border
+                .clip(RoundedCornerShape(20.dp))
+                .border(2.dp, Color.Gray, RoundedCornerShape(20.dp))
                 .padding(16.dp)
                 .padding(start = 12.dp),
             singleLine = true
         )
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
